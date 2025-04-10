@@ -1,0 +1,1746 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Form</title>
+  <style>
+    /* Add some basic styling */
+    body {
+      font-family: Arial, sans-serif;
+    }
+    form {
+      max-width: 500px;
+      margin: 40px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <h1>User Form</h1>
+  <form id="user-form">
+    <label for="name">Name:</label>
+    <input type="text" id="name" name="name"><br><br>
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email"><br><br>
+    <label for="phone-number">Phone Number:</label>
+    <input type="text" id="phone-number" name="phone_number"><br><br>
+    <button type="submit">Submit</button>
+  </form>
+  <div id="message"></div>
+  <div id="google-form-container"></div>
+
+  <script>
+    const form = document.getElementById('user-form');
+    const messageDiv = document.getElementById('message');
+    const googleFormContainer = document.getElementById('google-form-container');
+
+    // Add event listener to form submission
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      // Get form data
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const phoneNumber = document.getElementById('phone-number').value;
+
+      // Check if user is unique
+      fetch('/check-user', {
+        method: 'GET',
+        params: {
+          email,
+          phoneNumber
+        }
+      })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.message === 'User already exists') {
+          messageDiv.innerHTML = 'User already exists';
+        } else {
+          // Submit form data to server
+          fetch('/submit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              name,
+              email,
+              phoneNumber
+            })
+          })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.message === 'Form submitted successfully') {
+              // Load Google Form
+              const googleFormUrl = data.googleFormUrl;
+              googleFormContainer.innerHTML = `<iframe src="${googleFormUrl}" width="100%" height="500"></iframe>`;
+            } else {
+              messageDiv.innerHTML = 'Error submitting form';
+            }
+          })
+          .catch((error) => {
+            console.error('Error:', error);
+            messageDiv.innerHTML = 'Error submitting form';
+          });
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+        messageDiv.innerHTML = 'Error checking user';
+      });
+    });
+
+    // Add event listener to window blur event
+    window.addEventListener('blur', () => {
+      // Get user ID from local storage
+      const userId = localStorage.getItem('userId');
+
+      // Update user status to 'inactive'
+      fetch('/window-blur', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId
+        })
+      })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.message === 'User status updated successfully') {
+          console.log('User status updated successfully');
+        } else {
+          console.error('Error updating user status');
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+    });
+  </script>
+</body>
+</html> -->
+
+
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Form</title>
+  <style>
+    /* Add some basic styling */
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px; /* Add some padding */
+    }
+    form {
+      max-width: 500px;
+      margin: 20px auto; /* Reduced top margin */
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    label {
+        display: block; /* Make labels take full width */
+        margin-bottom: 5px;
+    }
+    input[type="text"], input[type="email"] {
+        width: calc(100% - 12px); /* Adjust width considering padding */
+        padding: 5px;
+        margin-bottom: 10px; /* Space below inputs */
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    button {
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #0056b3;
+    }
+    #message {
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 5px;
+        text-align: center;
+    }
+    .error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    .success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    #google-form-container iframe {
+        margin-top: 20px;
+        border: 1px solid #ccc; /* Add border to iframe */
+        border-radius: 5px;
+    }
+    /* Hide form and message initially if needed */
+    /* #user-form, #message { display: none; } */
+  </style>
+</head>
+<body>
+  <h1>User Form</h1>
+  <form id="user-form">
+    <div> 
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" required> 
+    </div>
+    <div>
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required> 
+    </div>
+    <div>
+      <label for="phone-number">Phone Number:</label>
+      <input type="text" id="phone-number" name="phone_number" required> 
+    </div>
+    <button type="submit">Submit</button>
+  </form>
+
+  
+  <div id="message"></div>
+
+  
+  <div id="google-form-container"></div>
+
+  <script>
+    const form = document.getElementById('user-form');
+    const messageDiv = document.getElementById('message');
+    const googleFormContainer = document.getElementById('google-form-container');
+    let currentUserId = localStorage.getItem('userId'); // Store user ID globally in the script
+
+    // Function to display messages
+    function showMessage(text, type = 'error') {
+        messageDiv.textContent = text;
+        messageDiv.className = type; // Add class for styling (e.g., 'error' or 'success')
+        messageDiv.style.display = 'block'; // Make sure it's visible
+    }
+
+    // Function to clear messages and Google Form
+    function clearOutput() {
+        messageDiv.textContent = '';
+        messageDiv.style.display = 'none';
+        googleFormContainer.innerHTML = ''; // Clear previous iframe if any
+    }
+
+    // Add event listener to form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault(); // Prevent default form submission
+      clearOutput(); // Clear previous messages/forms
+
+      // Get form data
+      const nameInput = document.getElementById('name');
+      const emailInput = document.getElementById('email');
+      const phoneInput = document.getElementById('phone-number');
+
+      const name = nameInput.value.trim();
+      const email = emailInput.value.trim();
+      const phoneNumber = phoneInput.value.trim();
+
+      // Basic client-side validation
+      if (!name || !email || !phoneNumber) {
+          showMessage('Please fill in all fields.');
+          return;
+      }
+
+      // --- Corrected Fetch for GET /check-user ---
+      // Construct the URL with query parameters
+      const checkUrl = `/check-user?email=${encodeURIComponent(email)}&phoneNumber=${encodeURIComponent(phoneNumber)}`;
+
+      try {
+          // Check if user exists
+          const checkResponse = await fetch(checkUrl); // No method/params needed here for GET
+          if (!checkResponse.ok) {
+              // Handle server errors (like 500) during check
+              const errorData = await checkResponse.json().catch(() => ({ message: 'Error checking user details.' }));
+              throw new Error(errorData.message || `HTTP error! status: ${checkResponse.status}`);
+          }
+
+          const checkData = await checkResponse.json();
+
+          if (checkData.exists) {
+              showMessage('User already exists with this email or phone number.');
+          } else {
+              // User is unique, proceed to submit
+              const submitResponse = await fetch('/submit', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ name, email, phoneNumber })
+              });
+
+              if (!submitResponse.ok) {
+                  // Handle server errors (like 500 or 409 if check somehow failed) during submit
+                  const errorData = await submitResponse.json().catch(() => ({ message: 'Error submitting form data.' }));
+                   throw new Error(errorData.message || `HTTP error! status: ${submitResponse.status}`);
+              }
+
+              const submitData = await submitResponse.json();
+
+              if (submitData.message === 'Form submitted successfully' && submitData.googleFormUrl) {
+                  showMessage('Form submitted successfully!', 'success');
+                  // Store the user ID received from the server
+                  currentUserId = submitData.userId;
+                  localStorage.setItem('userId', currentUserId);
+                  console.log('Stored userId:', currentUserId);
+
+                  // Load Google Form
+                  googleFormContainer.innerHTML = `<iframe src="${submitData.googleFormUrl}" width="100%" height="600" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`; // Added frameborder etc.
+
+                  // Optionally hide the original form
+                  // form.style.display = 'none';
+              } else {
+                  // Handle unexpected success response format
+                  throw new Error(submitData.message || 'Unexpected response after submission.');
+              }
+          }
+      } catch (error) {
+          console.error('Error during form submission process:', error);
+          showMessage(error.message || 'An unexpected error occurred.');
+      }
+    });
+
+    // Add event listener to window blur event
+    window.addEventListener('blur', () => {
+      // Use the userId stored in the script's variable or from localStorage again
+      const userIdToSend = currentUserId || localStorage.getItem('userId');
+
+      if (!userIdToSend) {
+          console.log('Window blurred, but no user ID is available.');
+          return; // Don't send request if no ID
+      }
+
+      console.log(`Window blurred. Sending status update for userId: ${userIdToSend}`);
+
+      fetch('/window-blur', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        // Ensure userId is sent correctly
+        body: JSON.stringify({ userId: userIdToSend })
+      })
+      .then(response => {
+          // Check if response is ok (status in the range 200-299)
+          if (!response.ok) {
+              // Attempt to parse error message from server if available
+              return response.json().then(errData => {
+                  throw new Error(errData.message || `Server responded with status: ${response.status}`);
+              }).catch(() => {
+                  // Fallback if response body is not JSON or empty
+                  throw new Error(`Server responded with status: ${response.status}`);
+              });
+          }
+          return response.json();
+      })
+      .then(data => {
+        // Check the specific message from the server
+        if (data.message === 'User status updated successfully') {
+          console.log('User status updated successfully via server.');
+        } else {
+          // Log other success messages or potential issues reported by the server
+          console.log('Server response on blur:', data.message);
+        }
+      })
+      .catch(error => {
+        // Catch network errors or errors thrown from response handling
+        console.error('Error sending window blur update:', error);
+      });
+    });
+
+    // Optional: Add focus listener to potentially update status back to 'active'
+    // window.addEventListener('focus', () => { /* ... similar fetch call ... */ });
+
+  </script>
+</body>
+</html> -->
+
+
+
+
+
+
+<!--  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Form</title>
+  <style>
+    /* Add some basic styling */
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px; /* Add some padding */
+    }
+    form {
+      max-width: 500px;
+      margin: 20px auto; /* Reduced top margin */
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    label {
+        display: block; /* Make labels take full width */
+        margin-bottom: 5px;
+    }
+    input[type="text"], input[type="email"] {
+        width: calc(100% - 12px); /* Adjust width considering padding */
+        padding: 5px;
+        margin-bottom: 10px; /* Space below inputs */
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    /* Style for disabled inputs */
+    input:disabled {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+    }
+    button {
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    button:hover:not(:disabled) { /* Only hover effect if not disabled */
+        background-color: #0056b3;
+    }
+    button:disabled {
+        background-color: #6c757d;
+        cursor: not-allowed;
+    }
+    #message {
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 5px;
+        text-align: center;
+        display: none; /* Hide initially */
+    }
+    .error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    .success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    .warning { /* Style for disqualification message */
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeeba;
+    }
+    #google-form-container iframe {
+        margin-top: 20px;
+        border: 1px solid #ccc; /* Add border to iframe */
+        border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>User Form</h1>
+  <form id="user-form">
+    <div>
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" required>
+    </div>
+    <div>
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required>
+    </div>
+    <div>
+      <label for="phone-number">Phone Number:</label>
+      <input type="text" id="phone-number" name="phone_number" required>
+    </div>
+    <button type="submit" id="submit-button">Submit</button>
+  </form>
+
+  
+  <div id="message"></div>
+
+  
+  <div id="google-form-container"></div>
+
+  <script>
+    const form = document.getElementById('user-form');
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    const phoneInput = document.getElementById('phone-number');
+    const submitButton = document.getElementById('submit-button');
+    const messageDiv = document.getElementById('message');
+    const googleFormContainer = document.getElementById('google-form-container');
+
+    let currentUserId = localStorage.getItem('userId'); // Store user ID globally
+    let isDisqualified = false; // Flag to track disqualification state
+    let hasSubmittedSuccessfully = false; // Flag to prevent blur action after success
+
+    // Function to display messages
+    function showMessage(text, type = 'error') {
+        messageDiv.textContent = text;
+        messageDiv.className = type; // Add class for styling
+        messageDiv.style.display = 'block'; // Make sure it's visible
+    }
+
+    // Function to clear messages and Google Form
+    function clearOutput() {
+        messageDiv.textContent = '';
+        messageDiv.style.display = 'none';
+        googleFormContainer.innerHTML = ''; // Clear previous iframe if any
+    }
+
+    // Function to disable the form and show disqualification message
+    function handleDisqualification(message = 'Your session has been closed due to switching between tabs.') {
+        isDisqualified = true; // Ensure flag is set
+        showMessage(message, 'warning'); // Show warning message
+
+        // Disable form fields
+        nameInput.disabled = true;
+        emailInput.disabled = true;
+        phoneInput.disabled = true;
+        submitButton.disabled = true;
+
+        // Clear any loaded Google Form
+        googleFormContainer.innerHTML = '';
+        console.log("User disqualified. Form disabled.");
+    }
+
+    // Add event listener to form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearOutput(); // Clear previous messages/forms
+
+      // --- Check if already disqualified ---
+      if (isDisqualified) {
+          handleDisqualification(); // Re-show message and ensure form is disabled
+          return;
+      }
+      // ------------------------------------
+
+      const name = nameInput.value.trim();
+      const email = emailInput.value.trim();
+      const phoneNumber = phoneInput.value.trim();
+
+      if (!name || !email || !phoneNumber) {
+          showMessage('Please fill in all fields.');
+          return;
+      }
+
+      const checkUrl = `/check-user?email=${encodeURIComponent(email)}&phoneNumber=${encodeURIComponent(phoneNumber)}`;
+
+      try {
+          const checkResponse = await fetch(checkUrl);
+          const checkData = await checkResponse.json(); // Always try to parse JSON
+
+          if (!checkResponse.ok && checkResponse.status !== 404) { // Handle server errors, but 404 is ok (user not found)
+              throw new Error(checkData.message || `Error checking user: Status ${checkResponse.status}`);
+          }
+
+          // --- Check disqualification status from server response ---
+          if (checkData.exists && checkData.disqualified) {
+              handleDisqualification(checkData.message || 'This user account was previously disqualified.');
+              return;
+          }
+          // ---------------------------------------------------------
+
+          if (checkData.exists && !checkData.disqualified) {
+              showMessage('User already exists with this email or phone number.');
+          } else {
+              // User is unique or doesn't exist, proceed to submit
+              const submitResponse = await fetch('/submit', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ name, email, phoneNumber })
+              });
+
+              const submitData = await submitResponse.json(); // Try parsing JSON regardless of status
+
+              if (!submitResponse.ok) {
+                   // Handle specific errors like 403 (disqualified during submit attempt) or 409 (race condition)
+                   if (submitResponse.status === 403) {
+                       handleDisqualification(submitData.message || 'Submission denied. Your session may have been closed.');
+                   } else {
+                       throw new Error(submitData.message || `Error submitting form: Status ${submitResponse.status}`);
+                   }
+                   return; // Stop execution after handling error
+              }
+
+              // --- Handle successful submission ---
+              if (submitData.message === 'Form submitted successfully' && submitData.googleFormUrl) {
+                  showMessage('Form submitted successfully!', 'success');
+                  hasSubmittedSuccessfully = true; // Set flag to prevent blur disqualification
+                  currentUserId = submitData.userId;
+                  localStorage.setItem('userId', currentUserId);
+                  console.log('Stored userId:', currentUserId);
+
+                  googleFormContainer.innerHTML = `<iframe src="${submitData.googleFormUrl}" width="100%" height="600" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`;
+
+                  // Optionally disable form after successful submission too
+                  // nameInput.disabled = true;
+                  // emailInput.disabled = true;
+                  // phoneInput.disabled = true;
+                  // submitButton.disabled = true;
+              } else {
+                  throw new Error(submitData.message || 'Unexpected response after submission.');
+              }
+          }
+      } catch (error) {
+          console.error('Error during form submission process:', error);
+          showMessage(error.message || 'An unexpected error occurred.');
+      }
+    });
+
+    
+        // === Event listener for tab switch (blur) ===
+        window.addEventListener('blur', () => {
+      // Only disqualify if a user ID exists and they aren't already disqualified
+      // REMOVED the hasSubmittedSuccessfully check from the condition below
+      if (!currentUserId || isDisqualified) {
+          console.log('Blur event ignored. No user ID or already disqualified.');
+          return;
+      }
+
+      console.log(`Window blurred. Sending disqualification for userId: ${currentUserId}`);
+      isDisqualified = true; // Optimistically set flag, will be confirmed by focus handler
+
+      // Send request to the server to mark as disqualified
+      fetch('/disqualify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUserId })
+      })
+      .then(response => {
+          if (!response.ok) {
+              // Log error but don't necessarily revert isDisqualified here,
+              // focus handler will confirm state.
+              console.error(`Server error during disqualification: ${response.status}`);
+              // Attempt to parse server error message
+              return response.json().then(errData => { throw new Error(errData.message || `Server error ${response.status}`); });
+          }
+          return response.json();
+      })
+      .then(data => {
+        console.log('Server acknowledged disqualification:', data.message);
+        // No UI update needed here, focus handler will do it.
+      })
+      .catch(error => {
+        console.error('Error sending disqualification update:', error);
+        // If the server call fails, maybe we shouldn't keep them disqualified?
+        // Reverting the flag here means if the server fails, they get another chance.
+        // isDisqualified = false;
+        // showMessage(`Could not confirm disqualification: ${error.message}`, 'error'); // Optionally inform user
+      });
+    });
+
+
+    // === Event listener for returning to tab (focus) ===
+    window.addEventListener('focus', () => {
+        // If the flag is set (meaning a blur event likely occurred)
+        // confirm and enforce the disqualified state
+        if (isDisqualified) {
+            console.log("Window focused, enforcing disqualified state.");
+            handleDisqualification(); // Show message, disable form
+        } else {
+            console.log("Window focused, user is not marked as disqualified.");
+        }
+    });
+
+    // === Initial check on page load ===
+    // If a userId exists in localStorage, check its status immediately
+    // This handles cases where the user reloads the page after being disqualified
+    document.addEventListener('DOMContentLoaded', async () => {
+        if (currentUserId) {
+            console.log(`Page loaded with existing userId: ${currentUserId}. Checking status.`);
+            // You might want to fetch user status here to set isDisqualified correctly on load
+            // Example: Fetch /check-user using email/phone if stored, or a dedicated /get-status endpoint
+            // For simplicity now, we rely on the blur/focus cycle. If they reload *after* blur,
+            // the next blur will trigger disqualification. If they reload *before* blur, state is reset.
+            // A more robust solution would involve checking status on load.
+        }
+    });
+
+  </script>
+</body>
+</html> -->
+ 
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Form</title>
+  <style>
+    /* Basic body reset for fullscreen */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%; /* Needed for potential height calculations */
+      font-family: Arial, sans-serif;
+      /* overflow: hidden; */ /* Prevent scrollbars ONLY when iframe is fullscreen */
+    }
+    /* Keep initial form styles */
+    #user-form { /* Target by ID */
+      max-width: 500px;
+      margin: 20px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    label {
+        display: block;
+        margin-bottom: 5px;
+    }
+    input[type="text"], input[type="email"] {
+        width: calc(100% - 12px);
+        padding: 5px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    input:disabled {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+    }
+    button {
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    button:hover:not(:disabled) {
+        background-color: #0056b3;
+    }
+    button:disabled {
+        background-color: #6c757d;
+        cursor: not-allowed;
+    }
+    /* Message styles */
+    #message {
+        max-width: 500px; /* Match form width initially */
+        margin: 15px auto; /* Center message */
+        padding: 10px;
+        border-radius: 5px;
+        text-align: center;
+        display: none; /* Hide initially */
+        position: relative; /* Keep in normal flow initially */
+        z-index: 1; /* Ensure it's above the initial form if needed */
+    }
+    .error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    .success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    .warning {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeeba;
+    }
+    /* Google Form Container styles - initial state */
+    #google-form-container {
+        /* No specific styles needed initially, will be added by JS */
+        display: none; /* Hide initially */
+    }
+    /* Styles for the iframe itself */
+    #google-form-container iframe {
+        display: block; /* Remove potential extra space below iframe */
+        /* Width, height, border set by JS */
+    }
+  </style>
+</head>
+<body>
+  
+  <h1 id="main-heading">User Form</h1>
+
+ 
+  <form id="user-form">
+    <div>
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" required>
+    </div>
+    <div>
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required>
+    </div>
+    <div>
+      <label for="phone-number">Phone Number:</label>
+      <input type="text" id="phone-number" name="phone_number" required>
+    </div>
+    <button type="submit" id="submit-button">Submit</button>
+  </form>
+
+  
+  <div id="message"></div>
+
+  
+  <div id="google-form-container"></div>
+
+  <script>
+    const form = document.getElementById('user-form');
+    const mainHeading = document.getElementById('main-heading'); // Get heading
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    const phoneInput = document.getElementById('phone-number');
+    const submitButton = document.getElementById('submit-button');
+    const messageDiv = document.getElementById('message');
+    const googleFormContainer = document.getElementById('google-form-container');
+
+    let currentUserId = localStorage.getItem('userId');
+    let isDisqualified = false;
+
+    // Function to display messages
+    function showMessage(text, type = 'error') {
+        messageDiv.innerHTML = text;
+        messageDiv.className = '';
+        messageDiv.classList.add(type);
+        messageDiv.style.display = 'block';
+    }
+
+    // Function to reset UI to initial state
+    function resetUI() {
+        messageDiv.textContent = '';
+        messageDiv.style.display = 'none';
+        googleFormContainer.innerHTML = '';
+        googleFormContainer.style.cssText = ''; // Clear inline styles
+        googleFormContainer.style.display = 'none';
+        form.style.display = 'block'; // Show initial form
+        mainHeading.style.display = 'block'; // Show heading
+        document.body.style.overflow = ''; // Restore scrolling
+        // Re-enable form fields if needed (depends on flow)
+        nameInput.disabled = false;
+        emailInput.disabled = false;
+        phoneInput.disabled = false;
+        submitButton.disabled = false;
+    }
+
+    // Function to handle disqualification state
+    function handleDisqualification(message = '<b>Access to the form has been blocked!<br>You moved away from the page. Please refresh to try again.</b>') {
+        isDisqualified = true;
+        showMessage(message, 'warning');
+
+        // Hide initial form and heading
+        form.style.display = 'none';
+        mainHeading.style.display = 'none';
+
+        // Hide and clear Google Form container, reset styles
+        googleFormContainer.innerHTML = '';
+        googleFormContainer.style.cssText = ''; // Clear inline styles
+        googleFormContainer.style.display = 'none';
+        document.body.style.overflow = ''; // Restore scrolling
+
+        // Keep message visible
+        messageDiv.style.position = 'relative'; // Ensure message is visible
+        messageDiv.style.zIndex = '1';
+
+        console.log("User disqualified.");
+    }
+
+    // Add event listener to form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      resetUI(); // Start with a clean slate, hide messages/google form
+
+      if (isDisqualified) {
+          handleDisqualification(); // Show disqualification message and hide forms
+          return;
+      }
+
+      const name = nameInput.value.trim();
+      const email = emailInput.value.trim();
+      const phoneNumber = phoneInput.value.trim();
+
+      if (!name || !email || !phoneNumber) {
+          showMessage('Please fill in all fields.');
+          return;
+      }
+
+      const checkUrl = `/check-user?email=${encodeURIComponent(email)}&phoneNumber=${encodeURIComponent(phoneNumber)}`;
+
+      try {
+          const checkResponse = await fetch(checkUrl);
+          const checkData = await checkResponse.json();
+
+          if (!checkResponse.ok && checkResponse.status !== 404) {
+              throw new Error(checkData.message || `Error checking user: Status ${checkResponse.status}`);
+          }
+
+          if (checkData.exists && checkData.disqualified) {
+              handleDisqualification(checkData.message || 'This user account was previously disqualified.');
+              return;
+          }
+
+          if (checkData.exists && !checkData.disqualified) {
+              showMessage('User already exists with this email or phone number.');
+          } else {
+              // Submit
+              const submitResponse = await fetch('/submit', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ name, email, phoneNumber })
+              });
+              const submitData = await submitResponse.json();
+
+              if (!submitResponse.ok) {
+                   if (submitResponse.status === 403) {
+                       handleDisqualification(submitData.message || 'Submission denied. Your session may have been closed.');
+                   } else {
+                       throw new Error(submitData.message || `Error submitting form: Status ${submitResponse.status}`);
+                   }
+                   return;
+              }
+
+              // --- Handle successful submission ---
+              if (submitData.message === 'Form submitted successfully' && submitData.googleFormUrl) {
+                  currentUserId = submitData.userId;
+                  localStorage.setItem('userId', currentUserId);
+                  console.log('Stored userId:', currentUserId);
+
+                  // --- GO FULLSCREEN ---
+                  // 1. Hide the initial form and heading
+                  form.style.display = 'none';
+                  mainHeading.style.display = 'none';
+
+                  // 2. Show brief success message (optional, will be covered)
+                  // showMessage('You have successfully submitted the form.', 'success');
+                  // Or hide it immediately if preferred
+                  messageDiv.style.display = 'none';
+
+
+                  // 3. Style the container for fullscreen
+                  googleFormContainer.style.position = 'fixed';
+                  googleFormContainer.style.top = '0';
+                  googleFormContainer.style.left = '0';
+                  googleFormContainer.style.width = '100vw'; // Use viewport width
+                  googleFormContainer.style.height = '100vh'; // Use viewport height
+                  googleFormContainer.style.margin = '0';
+                  googleFormContainer.style.padding = '0';
+                  googleFormContainer.style.border = 'none';
+                  googleFormContainer.style.boxShadow = 'none';
+                  googleFormContainer.style.background = 'white'; // Cover anything underneath
+                  googleFormContainer.style.zIndex = '1000'; // Ensure it's on top
+
+                  // 4. Load the Google Form iframe
+                  googleFormContainer.innerHTML = `<iframe src="${submitData.googleFormUrl}" style="width: 100%; height: 100%; border: none;" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`;
+
+                  // 5. Make the container visible
+                  googleFormContainer.style.display = 'block';
+
+                  // 6. Prevent body scrolling
+                  document.body.style.overflow = 'hidden';
+                  // --- END FULLSCREEN ---
+
+              } else {
+                  throw new Error(submitData.message || 'Unexpected response after submission.');
+              }
+          }
+      } catch (error) {
+          console.error('Error during form submission process:', error);
+          showMessage(error.message || 'An unexpected error occurred.');
+          // Ensure UI is in a reasonable state after error
+          form.style.display = 'block';
+          mainHeading.style.display = 'block';
+          googleFormContainer.style.display = 'none';
+      }
+    });
+
+
+    // === Event listener for tab switch (blur) ===
+    window.addEventListener('blur', () => {
+      if (!currentUserId || isDisqualified) {
+          console.log('Blur event ignored. No user ID or already disqualified.');
+          return;
+      }
+      console.log(`Window blurred. Sending disqualification for userId: ${currentUserId}`);
+      isDisqualified = true; // Optimistically set flag
+
+      fetch('/disqualify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUserId })
+      })
+      .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
+      .then(data => console.log('Server acknowledged disqualification:', data.message))
+      .catch(error => {
+          console.error('Error sending disqualification update:', error.message || error);
+          // isDisqualified = false; // Optional: revert if server fails
+      });
+    });
+
+
+    // === Event listener for returning to tab (focus) ===
+    window.addEventListener('focus', () => {
+        if (isDisqualified) {
+            console.log("Window focused, enforcing disqualified state.");
+            // Ensure the fullscreen iframe is hidden and message shown
+            handleDisqualification();
+        } else {
+            console.log("Window focused, user is not marked as disqualified.");
+        }
+    });
+
+    // === Initial check on page load ===
+    document.addEventListener('DOMContentLoaded', async () => {
+        resetUI(); // Start with the initial form visible
+        // Optional: Add logic here to check if the user is already disqualified
+        if (currentUserId) {
+            console.log(`Page loaded with existing userId: ${currentUserId}. Status check might be needed.`);
+            // Example: Fetch status and call handleDisqualification() if needed.
+        }
+    });
+
+  </script>
+</body>
+</html> -->
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Form</title>
+  <style>
+    /* Basic body reset */
+    html, body {
+      margin: 0; padding: 0; height: 100%; font-family: Arial, sans-serif;
+    }
+    /* --- Fade-in Animation on Load --- */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Apply animation to form and heading */
+    #user-form, #main-heading {
+      animation-name: fadeIn;
+      animation-duration: 0.8s;
+      animation-timing-function: ease-out;
+      animation-fill-mode: backwards;
+    }
+     #main-heading {
+        animation-delay: 0.1s;
+    }
+
+    /* --- Base Element Styles --- */
+    #main-heading {
+      text-align: center;
+      margin-top: 20px;
+      margin-bottom: 20px;
+      opacity: 1;
+      transition: opacity 0.5s ease-out;
+      width: 100%;
+    }
+    #user-form {
+      max-width: 500px;
+      margin: 20px auto;
+      padding: 20px; border: 1px solid #ccc; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+      box-sizing: border-box;
+    }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input[type="text"], input[type="email"] {
+      width: calc(100% - 16px);
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      transition: border-color 0.3s ease;
+      box-sizing: border-box;
+    }
+    input:disabled { background-color: #e9ecef; cursor: not-allowed; }
+
+    /* --- Button Styles & Animation --- */
+    button {
+      display: block;
+      width: 150px;
+      margin: 10px auto 0;
+      padding: 12px 20px;
+      background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;
+      font-size: 1em;
+      transition: background-color 0.3s ease, transform 0.1s ease, box-shadow 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button:hover:not(:disabled) {
+        background-color: #0056b3;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    button:disabled { background-color: #6c757d; cursor: not-allowed; opacity: 0.7; box-shadow: none; }
+    button:active:not(:disabled) {
+        transform: scale(0.97);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    /* --- Message Styles & Animation (CENTERED) --- */
+    #message {
+      width: 90%; /* Control width */
+      max-width: 500px; /* Keep max-width */
+      padding: 15px 20px; /* Adjusted padding */
+      border-radius: 8px; /* Slightly more rounded */
+      text-align: center;
+      opacity: 0;
+      transform: translate(-50%, -60%); /* Start slightly up for slide-in */
+      display: none;
+      position: fixed; /* Use fixed positioning */
+      top: 50%;        /* Center vertically */
+      left: 50%;       /* Center horizontally */
+      z-index: 2000;   /* Ensure it's above everything (iframe is 1000) */
+      transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* Add shadow for better visibility */
+    }
+    #message.visible {
+        opacity: 1;
+        transform: translate(-50%, -50%); /* Move to exact center */
+        display: block;
+    }
+    .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+
+
+    /* --- Inline Validation Message Styles & Animation --- */
+    .validation-message {
+      display: block; font-size: 0.85em; color: #dc3545; min-height: 1.2em; margin-top: -8px; margin-bottom: 8px;
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: opacity 0.3s ease, max-height 0.3s ease, margin-bottom 0.3s ease;
+    }
+    .validation-message.visible {
+        opacity: 1;
+        max-height: 2em;
+        margin-bottom: 8px;
+    }
+    input.error-border { border-color: #dc3545 !important; }
+
+    /* --- Timer Styles --- */
+    #timer-display {
+      position: fixed; top: 10px; right: 15px;
+      background-color: green;
+      color: red;
+      padding: 5px 10px; border-radius: 5px; font-size: 1.1em; font-weight: bold; z-index: 1001;
+      opacity: 0;
+      display: none;
+      transition: opacity 0.5s ease-in;
+    }
+    #timer-display.visible {
+        opacity: 1;
+        display: block;
+    }
+
+    /* --- Instruction Container Styles (Enhanced UI) --- */
+    #instruction-container {
+      max-width: 600px;
+      margin: 20px auto; /* Restored auto margin */
+      padding: 25px 30px;
+      border: 1px solid #bce8f1;
+      border-radius: 8px;
+      background-color: #f2f9fc;
+      box-shadow: 0 2px 10px rgba(0, 123, 255, 0.1);
+      opacity: 0;
+      transform: translateY(-10px);
+      display: none;
+      transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+      z-index: 1;
+      position: relative;
+      box-sizing: border-box;
+    }
+    #instruction-container.visible {
+        opacity: 1;
+        transform: translateY(0);
+        display: block;
+    }
+    #instruction-container h2 { margin-top: 0; margin-bottom: 15px; color: #0056b3; text-align: center; font-size: 1.6em; border-bottom: 2px solid #bce8f1; padding-bottom: 10px; }
+    #instruction-container p { text-align: center; margin-bottom: 20px; color: #31708f; font-size: 1.05em; }
+    #instruction-container ul { padding-left: 0; list-style: none; margin-bottom: 25px; }
+    #instruction-container li { margin-bottom: 12px; padding-left: 25px; position: relative; color: #333; line-height: 1.4; }
+    #instruction-container li::before { content: '✔'; position: absolute; left: 0; top: 1px; color: #007bff; font-weight: bold; font-size: 1.1em; }
+    #instruction-container li strong { color: #c00; font-weight: bold; }
+    .instruction-confirmation { margin-top: 25px; text-align: center; padding: 15px; background-color: #e7f3ff; border-radius: 5px; border-top: 1px solid #bce8f1; }
+    #instruction-container label[for="instruction-checkbox"] { display: inline; font-weight: bold; margin-left: 8px; cursor: pointer; color: #0056b3; font-size: 1.05em; }
+    #instruction-container input[type="checkbox"] { vertical-align: middle; cursor: pointer; width: 16px; height: 16px; }
+
+
+    /* --- Google Form Container Styles & Animation --- */
+    #google-form-container {
+      display: none;
+      opacity: 0;
+      transition: opacity 0.8s ease-in;
+      /* Fullscreen styles applied via JS */
+    }
+    #google-form-container.visible {
+        opacity: 1;
+        display: block;
+    }
+    #google-form-container iframe { display: block; }
+
+    /* --- Helper class for hiding elements with transition --- */
+    .hidden-fade {
+        opacity: 0 !important;
+        transform: translateY(-20px);
+        pointer-events: none;
+    }
+
+  </style>
+</head>
+<body>
+  <!-- Timer Display -->
+  <div id="timer-display">10:00</div>
+
+  <h1 id="main-heading">User Form</h1>
+
+  <form id="user-form">
+    <div>
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" required>
+      <span class="validation-message" id="name-validation-msg"></span>
+    </div>
+    <div>
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required>
+      <span class="validation-message" id="email-validation-msg"></span>
+    </div>
+    <div>
+      <label for="phone-number">Phone Number:</label>
+      <input type="text" id="phone-number" name="phone_number" required>
+      <span class="validation-message" id="phone-validation-msg"></span>
+    </div>
+    <button type="submit" id="submit-button">Submit</button>
+  </form>
+
+  <div id="message"></div>
+
+  <!-- Instruction Section -->
+  <div id="instruction-container">
+    <h2>Instructions</h2>
+    <p>Please read the following instructions carefully before proceeding:</p>
+    <ul>
+      <li>You will have <strong>10 minute</strong> to complete the test.</li>
+      <li>Ensure you complete the test within the time limit shown in the top-right corner.</li>
+      <li>Do <strong>not</strong> switch tabs or windows, or navigate away from the form page.</li>
+      <li>Switching away will result in a warning first, and disqualification on the second attempt.</li>
+      <li>Click the checkbox below once you understand these instructions.</li>
+    </ul>
+    <div class="instruction-confirmation">
+      <input type="checkbox" id="instruction-checkbox" name="instruction-confirm">
+      <label for="instruction-checkbox"> I have read and understood the instructions.</label>
+    </div>
+  </div>
+
+
+  <div id="google-form-container"></div>
+
+  <!-- <script>
+    // --- DOM Element References ---
+    const form = document.getElementById('user-form');
+    const mainHeading = document.getElementById('main-heading');
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    const phoneInput = document.getElementById('phone-number');
+    const submitButton = document.getElementById('submit-button');
+    const messageDiv = document.getElementById('message');
+    const googleFormContainer = document.getElementById('google-form-container');
+    const timerDisplay = document.getElementById('timer-display');
+    const nameValidationMsg = document.getElementById('name-validation-msg');
+    const emailValidationMsg = document.getElementById('email-validation-msg');
+    const phoneValidationMsg = document.getElementById('phone-validation-msg');
+    const instructionContainer = document.getElementById('instruction-container');
+    const instructionCheckbox = document.getElementById('instruction-checkbox');
+
+    // --- State Variables ---
+    let currentUserId = localStorage.getItem('userId');
+    let isDisqualified = false;
+    let validationErrors = { name: false, email: false, phone: false };
+    let timerIntervalId = null;
+    const timerDuration = 10 * 60 * 1000; // 10 minutes
+    let storedGoogleFormUrl = '';
+    let tabSwitchWarnings = parseInt(localStorage.getItem('tabSwitchWarnings') || '0');
+    let isShowingWarning = false; // Flag to track if the first warning alert is conceptually active
+    let isGoogleFormActive = false; // Flag for Google Form phase
+
+
+    // --- Helper Functions ---
+
+    function showMessage(text, type = 'error') {
+        // Displays messages in the #message div (now centered)
+        messageDiv.innerHTML = text;
+        messageDiv.className = ''; // Clear previous classes first
+        messageDiv.classList.add(type);
+        messageDiv.classList.add('visible'); // Add class to trigger animation
+    }
+
+    function hideMessage() {
+        // Hides the #message div
+        messageDiv.classList.remove('visible');
+    }
+
+    function showInlineMessage(field, message) {
+        // ... (Keep as is) ...
+        let element;
+        let inputElement;
+        if (field === 'name') { element = nameValidationMsg; inputElement = nameInput; }
+        else if (field === 'email') { element = emailValidationMsg; inputElement = emailInput; }
+        else if (field === 'phone') { element = phoneValidationMsg; inputElement = phoneInput; }
+        else { return; }
+
+        element.textContent = message;
+        validationErrors[field] = !!message;
+
+        if (message) {
+            element.classList.add('visible');
+            if (inputElement) inputElement.classList.add('error-border');
+        } else {
+            element.classList.remove('visible');
+            if (inputElement) inputElement.classList.remove('error-border');
+        }
+        updateSubmitButtonState();
+    }
+
+    function updateSubmitButtonState() {
+        // ... (Keep as is) ...
+        const hasErrors = Object.values(validationErrors).some(hasError => hasError);
+        submitButton.disabled = isDisqualified || hasErrors;
+    }
+
+    // --- Timer Functions ---
+    function stopTimer() {
+        // ... (Keep as is) ...
+        if (timerIntervalId) {
+            clearInterval(timerIntervalId);
+            timerIntervalId = null;
+            timerDisplay.classList.remove('visible');
+            console.log("Timer stopped.");
+        }
+    }
+
+    function formatTime(milliseconds) {
+        // ... (Keep as is) ...
+        const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    function startTimer() {
+        // ... (Keep as is) ...
+        stopTimer();
+        const startTime = Date.now();
+        timerDisplay.textContent = formatTime(timerDuration);
+        timerDisplay.classList.add('visible');
+        console.log("Timer started.");
+
+        timerIntervalId = setInterval(() => {
+            const elapsedTime = Date.now() - startTime;
+            const remainingTime = timerDuration - elapsedTime;
+
+            if (remainingTime <= 0) {
+                stopTimer();
+                console.log("Timer expired.");
+                // Use showMessage for centered display
+                handleDisqualification('<b>Your time is up!</b><br>Access to the form has been blocked.');
+            } else {
+                timerDisplay.textContent = formatTime(remainingTime);
+            }
+        }, 1000);
+    }
+
+    // --- UI Reset and Disqualification ---
+
+    function resetUI() {
+        // ... (Keep as is) ...
+        stopTimer();
+        hideMessage();
+        showInlineMessage('name', '');
+        showInlineMessage('email', '');
+        showInlineMessage('phone', '');
+
+        form.classList.remove('hidden-fade');
+        mainHeading.classList.remove('hidden-fade');
+        form.style.display = 'block';
+        mainHeading.style.display = 'block';
+
+        instructionContainer.classList.remove('visible');
+        instructionContainer.style.display = 'none';
+        instructionCheckbox.checked = false;
+
+        googleFormContainer.innerHTML = '';
+        googleFormContainer.style.cssText = '';
+        googleFormContainer.classList.remove('visible');
+        googleFormContainer.style.display = 'none';
+
+        document.body.style.overflow = '';
+        nameInput.disabled = false;
+        emailInput.disabled = false;
+        phoneInput.disabled = false;
+        validationErrors = { name: false, email: false, phone: false };
+
+        tabSwitchWarnings = 0;
+        localStorage.removeItem('tabSwitchWarnings');
+        isShowingWarning = false;
+        isGoogleFormActive = false; // Reset Google Form flag
+
+        updateSubmitButtonState();
+    }
+
+    function handleDisqualification(message = '<b>Access Blocked!</b><br>You moved away from the page. Please refresh to try again.') {
+        // ... (Keep as is) ...
+        if (isDisqualified) return;
+        isDisqualified = true;
+        stopTimer();
+        showMessage(message, 'warning'); // Show final disqualification message in centered div
+
+        form.classList.add('hidden-fade');
+        mainHeading.classList.add('hidden-fade');
+        setTimeout(() => {
+             if (form.classList.contains('hidden-fade')) form.style.display = 'none';
+             if (mainHeading.classList.contains('hidden-fade')) mainHeading.style.display = 'none';
+        }, 500);
+
+        instructionContainer.classList.remove('visible');
+        setTimeout(() => { if (!instructionContainer.classList.contains('visible')) instructionContainer.style.display = 'none'; }, 400);
+
+        googleFormContainer.classList.remove('visible');
+        googleFormContainer.innerHTML = '';
+        googleFormContainer.style.cssText = '';
+        setTimeout(() => {
+             if (!googleFormContainer.classList.contains('visible')) googleFormContainer.style.display = 'none';
+        }, 800);
+
+        document.body.style.overflow = '';
+        messageDiv.style.position = 'fixed'; // Ensure it stays fixed for centering
+        messageDiv.style.zIndex = '2000';
+        submitButton.disabled = true;
+        localStorage.removeItem('tabSwitchWarnings');
+        isGoogleFormActive = false;
+
+        console.log("User disqualified.");
+    }
+
+    // --- Real-time Validation Function ---
+    async function validateField(field) {
+        // ... (Keep as is) ...
+        if (isDisqualified) return;
+
+        let inputElement, value, fieldNameForAPI;
+        if (field === 'name') { inputElement = nameInput; fieldNameForAPI = 'name'; }
+        else if (field === 'email') { inputElement = emailInput; fieldNameForAPI = 'email'; }
+        else if (field === 'phone') { inputElement = phoneInput; fieldNameForAPI = 'phone'; }
+        else { return; }
+
+        value = inputElement.value.trim();
+
+        if (!value) {
+            showInlineMessage(field, `${field.charAt(0).toUpperCase() + field.slice(1)} is required.`);
+            return;
+        } else {
+             showInlineMessage(field, '');
+        }
+
+        console.log(`Checking ${field}: ${value}`);
+        const checkUrl = `/check-user?field=${fieldNameForAPI}&value=${encodeURIComponent(value)}`;
+
+        try {
+            const checkResponse = await fetch(checkUrl);
+            const checkData = await checkResponse.json();
+
+            if (!checkResponse.ok) {
+                 if (checkData.exists && checkData.disqualified) {
+                     handleDisqualification(checkData.message || `User with this ${field} exists and is disqualified.`);
+                 }
+                 else if (checkData.exists && !checkData.disqualified) {
+                     showInlineMessage(field, checkData.message || `User with this ${field} already exists.`);
+                 }
+                 else {
+                     throw new Error(checkData.message || `Error checking ${field}: Status ${checkResponse.status}`);
+                 }
+            } else {
+                if (checkData.exists) {
+                    if (checkData.disqualified) {
+                        handleDisqualification(checkData.message || `User with this ${field} exists and is disqualified.`);
+                    } else {
+                        showInlineMessage(field, checkData.message || `User with this ${field} already exists.`);
+                    }
+                } else {
+                    showInlineMessage(field, '');
+                }
+            }
+        } catch (error) {
+            console.error(`Error during real-time ${field} check:`, error);
+            showInlineMessage(field, `Could not verify ${field}. Check connection.`);
+        }
+    }
+
+    // --- Event Listeners ---
+
+    nameInput.addEventListener('blur', () => validateField('name'));
+    emailInput.addEventListener('blur', () => validateField('email'));
+    phoneInput.addEventListener('blur', () => validateField('phone'));
+
+    // Main form submission listener
+    form.addEventListener('submit', async (e) => {
+        // ... (Keep as is) ...
+        e.preventDefault();
+        hideMessage();
+
+        if (isDisqualified) { handleDisqualification(); return; }
+
+        await validateField('name');
+        await validateField('email');
+        await validateField('phone');
+
+        if (submitButton.disabled) {
+            showMessage('Please fix the errors in the form before submitting.', 'error');
+            return;
+        }
+
+        const name = nameInput.value.trim();
+        const email = emailInput.value.trim();
+        const phoneNumber = phoneInput.value.trim();
+
+        if (!name || !email || !phoneNumber) {
+            showMessage('Please fill in all fields.', 'error');
+            return;
+        }
+
+        console.log("Submitting form...");
+        submitButton.disabled = true;
+        submitButton.textContent = 'Submitting...';
+
+        try {
+            const submitResponse = await fetch('/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, phoneNumber })
+            });
+            const submitData = await submitResponse.json();
+
+            if (!submitResponse.ok) {
+                 if (submitResponse.status === 403) { handleDisqualification(submitData.message || 'Submission denied. Your session may have been closed.'); }
+                 else if (submitResponse.status === 409) {
+                     showMessage('User already exists with this email or phone number.', 'error');
+                     showInlineMessage('email', 'Email or phone number may already exist.');
+                     showInlineMessage('phone', 'Email or phone number may already exist.');
+                 } else { throw new Error(submitData.message || `Error submitting form: Status ${submitResponse.status}`); }
+
+                 if (!isDisqualified) {
+                     submitButton.disabled = false;
+                     submitButton.textContent = 'Submit';
+                 }
+                 return;
+            }
+
+            // --- Handle successful submission ---
+            if (submitData.message === 'Form submitted successfully' && submitData.googleFormUrl) {
+                currentUserId = submitData.userId;
+                localStorage.setItem('userId', currentUserId);
+                console.log('Stored userId:', currentUserId);
+                storedGoogleFormUrl = submitData.googleFormUrl;
+
+                // --- SHOW INSTRUCTIONS ---
+                form.classList.add('hidden-fade');
+                mainHeading.classList.add('hidden-fade');
+                setTimeout(() => {
+                    if (form.classList.contains('hidden-fade')) form.style.display = 'none';
+                    if (mainHeading.classList.contains('hidden-fade')) mainHeading.style.display = 'none';
+                }, 500);
+
+                instructionContainer.style.display = 'block';
+                setTimeout(() => {
+                    instructionContainer.classList.add('visible');
+                }, 10);
+                // --- END SHOW INSTRUCTIONS ---
+
+            } else {
+                throw new Error(submitData.message || 'Unexpected response after submission.');
+            }
+
+        } catch (error) {
+            console.error('Error during form submission process:', error);
+            showMessage(error.message || 'An unexpected error occurred during submission.');
+            if (!isDisqualified) {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Submit';
+                updateSubmitButtonState();
+            }
+        }
+    });
+
+    // --- Checkbox listener ---
+    instructionCheckbox.addEventListener('change', () => {
+        // ... (Keep as is) ...
+        if (isDisqualified) return;
+
+        if (instructionCheckbox.checked) {
+            console.log("Instructions confirmed.");
+            instructionContainer.classList.remove('visible');
+            setTimeout(() => { if (!instructionContainer.classList.contains('visible')) instructionContainer.style.display = 'none'; }, 400);
+
+            // --- GO FULLSCREEN with Google Form ---
+            googleFormContainer.style.position = 'fixed';
+            googleFormContainer.style.top = '0';
+            googleFormContainer.style.left = '0';
+            googleFormContainer.style.width = '100vw';
+            googleFormContainer.style.height = '100vh';
+            googleFormContainer.style.margin = '0';
+            googleFormContainer.style.padding = '0';
+            googleFormContainer.style.border = 'none';
+            googleFormContainer.style.boxShadow = 'none';
+            googleFormContainer.style.background = 'white';
+            googleFormContainer.style.zIndex = '1000';
+
+            googleFormContainer.innerHTML = `<iframe src="${storedGoogleFormUrl}" style="width: 100%; height: 100%; border: none;" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`;
+
+            googleFormContainer.style.display = 'block';
+            setTimeout(() => {
+                googleFormContainer.classList.add('visible');
+                isGoogleFormActive = true; // Set Google Form flag to true
+                console.log("Google Form is now active. Tab switch monitoring enabled.");
+            }, 10);
+
+            document.body.style.overflow = 'hidden';
+            startTimer();
+
+        } else {
+            // Optional: Handle unchecking
+        }
+    });
+
+
+    // === Blur/Focus Listeners (IMPLEMENTING REQUIREMENTS) ===
+    window.addEventListener('blur', () => {
+        console.log("--- Blur Event Start ---");
+        // *** REQUIREMENT 1: Only run during active Google Form phase ***
+        if (!isGoogleFormActive || !currentUserId || isDisqualified) {
+            console.log(`Blur ignored: isGoogleFormActive=${isGoogleFormActive}, currentUserId=${currentUserId}, isDisqualified=${isDisqualified}`);
+            console.log("--- Blur Event End (Ignored) ---");
+            return;
+        }
+
+        // Prevent multiple alerts if blur/focus happens rapidly
+        if (isShowingWarning) {
+             console.log("Blur ignored: Warning alert likely still showing.");
+             console.log("--- Blur Event End (Warning Active) ---");
+             return;
+        }
+
+        tabSwitchWarnings++;
+        localStorage.setItem('tabSwitchWarnings', tabSwitchWarnings.toString());
+        console.log(`Window blurred. Warning count: ${tabSwitchWarnings}`);
+
+        if (tabSwitchWarnings === 1) {
+            console.log("Condition met: tabSwitchWarnings === 1");
+            // *** REQUIREMENT 2: Show Popup Alert for first warning ***
+            isShowingWarning = true; // Set flag immediately
+            alert('Warning: You have switched tabs. This is your final warning. Switching again will block your access.');
+            console.log("First tab switch warning issued via alert(). isShowingWarning set to true.");
+
+        } else if (tabSwitchWarnings >= 2) {
+            console.log("Condition met: tabSwitchWarnings >= 2");
+            console.log("Second tab switch detected. Disqualifying user.");
+            // Use the specific message for second switch disqualification, shown in the centered #message div
+            handleDisqualification('<b>Access Blocked!</b><br>You moved away from the page. Please refresh to try again.'); // Disqualify fully
+
+            // Notify the server about the final disqualification
+            fetch('/disqualify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: currentUserId })
+             })
+            .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
+            .then(data => console.log('Server acknowledged final disqualification:', data.message))
+            .catch(error => console.error('Error sending final disqualification update:', error.message || error));
+        }
+        console.log("--- Blur Event End ---");
+    });
+
+    window.addEventListener('focus', () => {
+        console.log("--- Focus Event Start ---");
+        if (isDisqualified) {
+            console.log("Focus: User is fully disqualified. Enforcing state.");
+            handleDisqualification(); // Re-apply disqualification UI if needed
+        } else if (isShowingWarning) {
+            // If returning after the first warning alert was triggered
+            console.log("Focus: Returning after first warning alert (isShowingWarning is true).");
+            // Reset the flag. No need to hide anything visually as alert was modal.
+            isShowingWarning = false;
+            console.log("isShowingWarning set to false.");
+        } else {
+            // Normal focus event
+            if (isGoogleFormActive) {
+                 console.log("Focus: Normal focus during active Google Form phase.");
+            } else {
+                 console.log("Focus: Normal focus before Google Form phase.");
+                 updateSubmitButtonState();
+            }
+        }
+         console.log("--- Focus Event End ---");
+    });
+
+
+    // === Initial check on page load ===
+    document.addEventListener('DOMContentLoaded', async () => {
+        // ... (Keep as is) ...
+        tabSwitchWarnings = parseInt(localStorage.getItem('tabSwitchWarnings') || '0');
+        console.log(`Page loaded. Initial tab switch warnings: ${tabSwitchWarnings}`);
+
+        resetUI(); // Reset UI first
+
+        // Re-check disqualification based on stored warning count *if* a user ID exists
+        if (currentUserId && tabSwitchWarnings >= 2) {
+             console.log("Disqualifying user on load due to previous warning count.");
+             isDisqualified = true; // Manually set flag after resetUI
+             handleDisqualification();
+        }
+        else if (currentUserId) {
+            console.log(`Page loaded with existing userId: ${currentUserId}. Status check might be needed.`);
+            // Consider adding server-side status check here
+        } else {
+            console.log("Page loaded. No existing user ID found.");
+        }
+    });
+  </script> -->
+
+  
+  <!-- ADD this line to load the main script -->
+  <script type="module" src="js/main.js"></script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

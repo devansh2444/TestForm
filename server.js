@@ -698,6 +698,248 @@
 
 // server.js
 
+// // Load environment variables from .env file
+// require('dotenv').config();
+
+// const express = require('express');
+// const mysql = require('mysql2/promise');
+// const bodyParser = require('body-parser');
+// const path = require('path');
+
+// // --- Screenshot Dependencies ---
+// const puppeteer = require('puppeteer');
+// const cron = require('node-cron');
+// const fs = require('node:fs/promises'); // Use fs.promises for async operations
+// // --- End Screenshot Dependencies ---
+
+// const app = express();
+// app.use(bodyParser.json());
+
+// // --- Database Connection Pool Settings ---
+// // (Keep your existing pool setup)
+// const dbConfig = {
+//   host: process.env.DB_HOST || 'localhost',
+//   user: process.env.DB_USER || 'root',
+//   password: process.env.DB_PASSWORD || '', // Default to empty if not set
+//   database: process.env.DB_NAME || 'task',
+//   waitForConnections: true,
+//   connectionLimit: 10,
+//   queueLimit: 0
+// };
+// const pool = mysql.createPool(dbConfig);
+
+// // Serve static files (JS, CSS, etc.)
+// app.use('/js', express.static(path.join(__dirname, 'js')));
+// // Add CSS if you have it: app.use('/css', express.static(path.join(__dirname, 'css')));
+
+// // Optional: Test pool connection
+// pool.getConnection()
+//   .then(connection => {
+//     console.log('Successfully connected to the database pool.');
+//     connection.release();
+//   })
+//   .catch(err => {
+//     console.error('Error connecting to the database pool:', err);
+//     process.exit(1);
+//   });
+
+  
+
+// // --- Screenshot Configuration ---
+// // It's better to get the URL from environment variables if possible
+// const urlToCapture = process.env.GOOGLE_FORM_URL || 'https://docs.google.com/forms/d/e/1FAIpQLSdjoWcHb2PqK1BXPp_U8Z-AYHyaimZ4Ko5-xvmNOOuQquDOTQ/viewform?embedded=true'; // Fallback URL
+// const screenshotDirectory = path.join(__dirname, 'screenshots'); // Use path.join for reliability
+// const screenshotPrefix = 'screenshot_';
+// const cronSchedule = '*/2 * * * *'; // Capture every 2 minutes
+// // --- End Screenshot Configuration ---
+
+// // --- Screenshot Function ---
+// async function captureScreenshot(url, outputPath) {
+//     let browser = null; // Define browser outside try block
+//     console.log(`Attempting to capture screenshot of: ${url}`);
+//     try {
+//         // Launch Puppeteer - consider adding args for server environments
+//         browser = await puppeteer.launch({
+//              headless: 'new',
+//              args: [
+//                  '--no-sandbox', // Often needed in Docker/Linux environments
+//                  '--disable-setuid-sandbox'
+//              ]
+//          });
+//         const page = await browser.newPage();
+//         await page.setViewport({ width: 1280, height: 800 }); // Set a reasonable viewport
+
+//         await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 }); // Wait longer, up to 60s
+//         await page.screenshot({ path: outputPath, fullPage: true });
+//         console.log(`Screenshot saved to: ${outputPath}`);
+//     } catch (error) {
+//         console.error(`Error capturing screenshot of ${url}:`, error);
+//         // Optional: Add more specific error handling or logging
+//     } finally {
+//         if (browser) {
+//             await browser.close(); // Ensure browser is closed even on error
+//             console.log("Puppeteer browser closed.");
+//         }
+//     }
+// }
+// // --- End Screenshot Function ---
+
+// // --- Schedule Screenshot Task ---
+// async function setupScreenshotTask() {
+//     // Create the screenshot directory if it doesn't exist when the server starts
+//     try {
+//         await fs.mkdir(screenshotDirectory, { recursive: true });
+//         console.log(`Screenshot directory ensured: ${screenshotDirectory}`);
+
+//         // Check if the URL is valid before scheduling
+//         if (!urlToCapture) {
+//             console.warn('GOOGLE_FORM_URL is not defined. Screenshot task will not run.');
+//             return;
+//         }
+
+//         // Schedule the task
+//         cron.schedule(cronSchedule, async () => {
+//             console.log(`Cron job triggered: ${new Date().toISOString()}`);
+//             const timestamp = Date.now();
+//             // Corrected template literal usage for filename/path
+//             const filename = `${screenshotPrefix}${timestamp}.png`;
+//             const outputPath = path.join(screenshotDirectory, filename); // Use path.join here too
+//             await captureScreenshot(urlToCapture, outputPath);
+//         }, {
+//             scheduled: true,
+//             timezone: "Asia/Kolkata" // Example: Set your timezone if needed
+//         });
+
+//         console.log(`Screenshot capture scheduled: ${cronSchedule}`);
+
+//     } catch (error) {
+//         console.error('Error setting up screenshot directory or scheduling task:', error);
+//         // Decide if the server should still run if screenshots fail to set up
+//     }
+// }
+
+// // Call the setup function when the server starts
+// setupScreenshotTask();
+// // --- End Schedule Screenshot Task ---
+
+
+// // === ROUTE HANDLER FOR THE HOMEPAGE ===
+// app.get('/', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'index.html'));
+// });
+
+// // === API endpoint to store user details ===
+// // (Keep your existing /submit route)
+// app.post('/submit', async (req, res, next) => {
+//     // ... your existing submit logic ...
+//     const { name, email, phoneNumber } = req.body;
+//     if (!name || !email || !phoneNumber) {
+//       const err = new Error('Name, email, and phone number are required.');
+//       err.statusCode = 400; return next(err);
+//     }
+//     try {
+//       const checkSql = 'SELECT id, status FROM users WHERE email = ? OR phone = ?';
+//       const [existingUsers] = await pool.execute(checkSql, [email, phoneNumber]);
+//       if (existingUsers.length > 0) {
+//         const existingUser = existingUsers[0];
+//         let err;
+//         if (existingUser.status === 'disqualified') {
+//           err = new Error('Your session was closed due to switching tabs. Submission denied.');
+//           err.statusCode = 403;
+//         } else {
+//           err = new Error('User already exists with this email or phone number');
+//           err.statusCode = 409;
+//         } return next(err);
+//       }
+//       const newUser = { name, email, phone: phoneNumber, status: 'active' };
+//       const insertSql = 'INSERT INTO users SET ?';
+//       const [insertResult] = await pool.query(insertSql, newUser);
+//       console.log('User inserted with ID:', insertResult.insertId);
+//       const googleFormUrl = process.env.GOOGLE_FORM_URL;
+//       if (!googleFormUrl) console.warn('GOOGLE_FORM_URL is not set.');
+//       res.status(201).send({
+//         message: 'Form submitted successfully',
+//         googleFormUrl: googleFormUrl || '',
+//         userId: insertResult.insertId
+//       });
+//     } catch (err) { next(err); }
+// });
+
+// // === API endpoint to check if a specific field value exists ===
+// // (Keep your existing /check-user route)
+// app.get('/check-user', async (req, res, next) => {
+//     // ... your existing check-user logic ...
+//     const { field, value } = req.query;
+//     if (!field || !value) {
+//       const err = new Error('Field and value are required for checking.');
+//       err.statusCode = 400; return next(err);
+//     }
+//     const allowedFields = { name: 'name', email: 'email', phone: 'phone' };
+//     const columnName = allowedFields[field];
+//     if (!columnName) {
+//       const err = new Error('Invalid field specified for checking.');
+//       err.statusCode = 400; return next(err);
+//     }
+//     const sql = 'SELECT id, status FROM users WHERE ?? = ?';
+//     try {
+//       const [results] = await pool.query(sql, [columnName, value]);
+//       if (results.length > 0) {
+//         const user = results[0];
+//         if (user.status === 'disqualified') {
+//           return res.status(200).send({ exists: true, disqualified: true, message: `User with this ${field} exists and was previously disqualified.` });
+//         }
+//         return res.status(200).send({ exists: true, disqualified: false, message: `User with this ${field} already exists.` });
+//       } else {
+//         return res.status(200).send({ exists: false, message: `User with this ${field} is unique.` });
+//       }
+//     } catch (err) { next(err); }
+// });
+
+// // === API endpoint to handle disqualification on tab switch ===
+// // (Keep your existing /disqualify route)
+// app.post('/disqualify', async (req, res, next) => {
+//     // ... your existing disqualify logic ...
+//     const { userId } = req.body;
+//     if (!userId) {
+//       const err = new Error('User ID is required to disqualify.');
+//       err.statusCode = 400; return next(err);
+//     }
+//     const newStatus = 'disqualified';
+//     const sql = 'UPDATE users SET status = ? WHERE id = ?';
+//     try {
+//       const [results] = await pool.execute(sql, [newStatus, userId]);
+//       if (results.affectedRows > 0) {
+//         return res.status(200).send({ message: 'User status updated to disqualified successfully' });
+//       } else {
+//         const err = new Error('User not found for status update.');
+//         err.statusCode = 404; return next(err);
+//       }
+//     } catch (err) { next(err); }
+// });
+
+
+// // === Centralized Error Handling Middleware ===
+// // (Keep your existing error handler)
+// app.use((err, req, res, next) => {
+//   console.error(err.stack || err);
+//   const statusCode = err.statusCode || 500;
+//   const message = err.statusCode ? err.message : (process.env.NODE_ENV === 'production' ? 'An internal server error occurred' : err.message);
+//   res.status(statusCode).send({ message: message });
+// });
+
+
+// // --- Server Listener ---
+// const port = process.env.PORT || 3000;
+// app.listen(port, () => {
+//   console.log(`Server listening on port ${port}`);
+//   console.log(`Access the form at: http://localhost:${port}`);
+// });
+
+
+
+
+// server.js
+
 // Load environment variables from .env file
 require('dotenv').config();
 
@@ -707,16 +949,18 @@ const bodyParser = require('body-parser');
 const path = require('path');
 
 // --- Screenshot Dependencies ---
-const puppeteer = require('puppeteer');
-const cron = require('node-cron');
+// Puppeteer/Cron setup can potentially be removed if getDisplayMedia is the ONLY method
+// const puppeteer = require('puppeteer');
+// const cron = require('node-cron');
 const fs = require('node:fs/promises'); // Use fs.promises for async operations
 // --- End Screenshot Dependencies ---
 
 const app = express();
-app.use(bodyParser.json());
+// Increase payload limit for base64 image data from screen capture
+app.use(bodyParser.json({ limit: '20mb' })); // Adjust limit as needed (screen captures can be larger)
+
 
 // --- Database Connection Pool Settings ---
-// (Keep your existing pool setup)
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
@@ -744,81 +988,14 @@ pool.getConnection()
   });
 
 // --- Screenshot Configuration ---
-// It's better to get the URL from environment variables if possible
-const urlToCapture = process.env.GOOGLE_FORM_URL || 'https://docs.google.com/forms/d/e/1FAIpQLSdjoWcHb2PqK1BXPp_U8Z-AYHyaimZ4Ko5-xvmNOOuQquDOTQ/viewform?embedded=true'; // Fallback URL
-const screenshotDirectory = path.join(__dirname, 'screenshots'); // Use path.join for reliability
-const screenshotPrefix = 'screenshot_';
-const cronSchedule = '*/2 * * * *'; // Capture every 2 minutes
-// --- End Screenshot Configuration ---
+// Directory for ALL screenshots
+const screenshotDirectory = path.join(__dirname, 'screenshots');
+const screenCapturePrefix = 'capture_'; // Prefix for getDisplayMedia captures
 
-// --- Screenshot Function ---
-async function captureScreenshot(url, outputPath) {
-    let browser = null; // Define browser outside try block
-    console.log(`Attempting to capture screenshot of: ${url}`);
-    try {
-        // Launch Puppeteer - consider adding args for server environments
-        browser = await puppeteer.launch({
-             headless: 'new',
-             args: [
-                 '--no-sandbox', // Often needed in Docker/Linux environments
-                 '--disable-setuid-sandbox'
-             ]
-         });
-        const page = await browser.newPage();
-        await page.setViewport({ width: 1280, height: 800 }); // Set a reasonable viewport
-
-        await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 }); // Wait longer, up to 60s
-        await page.screenshot({ path: outputPath, fullPage: true });
-        console.log(`Screenshot saved to: ${outputPath}`);
-    } catch (error) {
-        console.error(`Error capturing screenshot of ${url}:`, error);
-        // Optional: Add more specific error handling or logging
-    } finally {
-        if (browser) {
-            await browser.close(); // Ensure browser is closed even on error
-            console.log("Puppeteer browser closed.");
-        }
-    }
-}
-// --- End Screenshot Function ---
-
-// --- Schedule Screenshot Task ---
-async function setupScreenshotTask() {
-    // Create the screenshot directory if it doesn't exist when the server starts
-    try {
-        await fs.mkdir(screenshotDirectory, { recursive: true });
-        console.log(`Screenshot directory ensured: ${screenshotDirectory}`);
-
-        // Check if the URL is valid before scheduling
-        if (!urlToCapture) {
-            console.warn('GOOGLE_FORM_URL is not defined. Screenshot task will not run.');
-            return;
-        }
-
-        // Schedule the task
-        cron.schedule(cronSchedule, async () => {
-            console.log(`Cron job triggered: ${new Date().toISOString()}`);
-            const timestamp = Date.now();
-            // Corrected template literal usage for filename/path
-            const filename = `${screenshotPrefix}${timestamp}.png`;
-            const outputPath = path.join(screenshotDirectory, filename); // Use path.join here too
-            await captureScreenshot(urlToCapture, outputPath);
-        }, {
-            scheduled: true,
-            timezone: "Asia/Kolkata" // Example: Set your timezone if needed
-        });
-
-        console.log(`Screenshot capture scheduled: ${cronSchedule}`);
-
-    } catch (error) {
-        console.error('Error setting up screenshot directory or scheduling task:', error);
-        // Decide if the server should still run if screenshots fail to set up
-    }
-}
-
-// Call the setup function when the server starts
-setupScreenshotTask();
-// --- End Schedule Screenshot Task ---
+// --- Ensure Screenshot Directory Exists ---
+fs.mkdir(screenshotDirectory, { recursive: true })
+  .then(() => console.log(`Screenshot directory ensured: ${screenshotDirectory}`))
+  .catch(err => console.error('Error creating screenshot directory:', err));
 
 
 // === ROUTE HANDLER FOR THE HOMEPAGE ===
@@ -827,9 +1004,8 @@ app.get('/', (req, res) => {
 });
 
 // === API endpoint to store user details ===
-// (Keep your existing /submit route)
+// (Keep your existing /submit route as is)
 app.post('/submit', async (req, res, next) => {
-    // ... your existing submit logic ...
     const { name, email, phoneNumber } = req.body;
     if (!name || !email || !phoneNumber) {
       const err = new Error('Name, email, and phone number are required.');
@@ -842,7 +1018,7 @@ app.post('/submit', async (req, res, next) => {
         const existingUser = existingUsers[0];
         let err;
         if (existingUser.status === 'disqualified') {
-          err = new Error('Your session was closed due to switching tabs. Submission denied.');
+          err = new Error('Your session was closed due to switching tabs or previous disqualification. Submission denied.');
           err.statusCode = 403;
         } else {
           err = new Error('User already exists with this email or phone number');
@@ -864,9 +1040,8 @@ app.post('/submit', async (req, res, next) => {
 });
 
 // === API endpoint to check if a specific field value exists ===
-// (Keep your existing /check-user route)
+// (Keep your existing /check-user route as is)
 app.get('/check-user', async (req, res, next) => {
-    // ... your existing check-user logic ...
     const { field, value } = req.query;
     if (!field || !value) {
       const err = new Error('Field and value are required for checking.');
@@ -893,10 +1068,9 @@ app.get('/check-user', async (req, res, next) => {
     } catch (err) { next(err); }
 });
 
-// === API endpoint to handle disqualification on tab switch ===
-// (Keep your existing /disqualify route)
+// === API endpoint to handle disqualification (can be triggered by client) ===
+// (Keep your existing /disqualify route as is)
 app.post('/disqualify', async (req, res, next) => {
-    // ... your existing disqualify logic ...
     const { userId } = req.body;
     if (!userId) {
       const err = new Error('User ID is required to disqualify.');
@@ -909,15 +1083,48 @@ app.post('/disqualify', async (req, res, next) => {
       if (results.affectedRows > 0) {
         return res.status(200).send({ message: 'User status updated to disqualified successfully' });
       } else {
-        const err = new Error('User not found for status update.');
-        err.statusCode = 404; return next(err);
+        // Don't treat 'user not found' as a server error, just report it
+        return res.status(404).send({ message: 'User not found for status update.' });
       }
     } catch (err) { next(err); }
 });
 
+// === NEW Endpoint to receive screen captures from getDisplayMedia ===
+app.post('/upload-screen-capture', async (req, res, next) => {
+    const { imageData, userId, timestamp } = req.body;
+
+    if (!imageData || !imageData.startsWith('data:image/png;base64,')) {
+        return res.status(400).send({ message: 'Invalid image data format.' });
+    }
+    if (!userId) {
+         return res.status(400).send({ message: 'User ID is required for screen capture upload.' });
+    }
+
+    try {
+        // Extract base64 data
+        const base64Data = imageData.replace(/^data:image\/png;base64,/, "");
+        const safeTimestamp = timestamp || Date.now();
+        // Construct filename: capture_userId_timestamp.png
+        const filename = `${screenCapturePrefix}${userId}_${safeTimestamp}.png`;
+        const outputPath = path.join(screenshotDirectory, filename); // Save to common directory
+
+        // Save the file
+        await fs.writeFile(outputPath, base64Data, 'base64');
+
+        console.log(`[Capture] Screen capture received and saved: ${outputPath}`);
+        res.status(200).send({ message: 'Screen capture received and saved.' });
+
+    } catch (error) {
+        console.error('[Capture] Error saving screen capture:', error);
+        // Pass to central error handler
+        next(new Error('Failed to save screen capture on server.'));
+    }
+});
+// === End screen capture endpoint ===
+
 
 // === Centralized Error Handling Middleware ===
-// (Keep your existing error handler)
+// (Keep your existing error handler as is)
 app.use((err, req, res, next) => {
   console.error(err.stack || err);
   const statusCode = err.statusCode || 500;
@@ -931,4 +1138,5 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
   console.log(`Access the form at: http://localhost:${port}`);
+  console.log(`Screen captures will be saved to: ${screenshotDirectory}`);
 });

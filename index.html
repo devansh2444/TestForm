@@ -1144,7 +1144,7 @@
     /* --- Timer Styles --- */
     #timer-display {
       position: fixed; top: 10px; right: 15px;
-      background-color: green;
+      background-color: rgb(255, 255, 255);
       color: red;
       padding: 5px 10px; border-radius: 5px; font-size: 1.1em; font-weight: bold; z-index: 1001;
       opacity: 0;
@@ -1245,10 +1245,21 @@
     <ul>
       <li>You will have <strong>10 minute</strong> to complete the test.</li>
       <li>Ensure you complete the test within the time limit shown in the top-right corner.</li>
-      <li>Do <strong>not</strong> switch tabs or windows, or navigate away from the form page.</li>
-      <li>Switching away will result in a warning first, and disqualification on the second attempt.</li>
+      <li>During the test,<strong>do not</strong> perform any of the following actions.</li>
+      <li>Switch to another application or program.</li>
+      <li>Use keyborad shortcuts for switching.</li>
+      <li>Switch to another browser tab or window.</li>
+      <li>Minimize the browser window.</li>
+      <li>Interact with notifications (e.g., clicking on them).</li>
+      <li>Refreshing the page.</li>
+      <li>Do not allow your computer to go to sleep or hibernate.</li>
+      <li>If you perform any of the above actions:</li>
+      <li>You will receive a warning on the first violation.</li>
+      <li>On the second violation, you will be disqualified, and access to the test will be blocked..</li>
       <li>Click the checkbox below once you understand these instructions.</li>
     </ul>
+    <!-- Consider adding a separate section or note before the instructions: -->
+    <p><strong>Before you begin:</strong> Please ensure your internet connection is stable and your device is fully charged or plugged in.</p>
     <div class="instruction-confirmation">
       <input type="checkbox" id="instruction-checkbox" name="instruction-confirm">
       <label for="instruction-checkbox"> I have read and understood the instructions.</label>

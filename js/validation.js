@@ -1,3 +1,4 @@
+
 // js/validation.js
 
 // Returns an object: { isValid: boolean, message: string | null }

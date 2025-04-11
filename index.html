@@ -1167,7 +1167,7 @@
       box-shadow: 0 2px 10px rgba(0, 123, 255, 0.1);
       opacity: 0;
       /* MODIFIED: Start slightly below */
-      transform: translateY(10px);
+      /* transform: translateY(10px); */
       display: none;
       /* MODIFIED: Transition duration slightly shorter to match form feel */
       transition: opacity 0.6s ease-out, transform 0.6s ease-out;
@@ -1241,34 +1241,43 @@
 
   <div id="message"></div>
 
-  <!-- Instruction Section -->
-  <div id="instruction-container">
-    <h2>Instructions</h2>
-    <p>Please read the following instructions carefully before proceeding:</p>
-    <ul>
-      <li>You will have <strong>10 minute</strong> to complete the test.</li>
-      <li>Ensure you complete the test within the time limit shown in the top-right corner.</li>
-      <li>During the test,<strong>do not</strong> perform any of the following actions.</li>
-      <li>Switch to another application or program.</li>
-      <li>Use keyborad shortcuts for switching.</li>
-      <li>Switch to another browser tab or window.</li>
-      <li>Minimize the browser window.</li>
-      <li>Interact with notifications (e.g., clicking on them).</li>
-      <li>Refreshing the page.</li>
-      <li>Do not allow your computer to go to sleep or hibernate.</li>
-      <li>If you perform any of the above actions:</li>
-      <li>You will receive a warning on the first violation.</li>
-      <li>On the second violation, you will be disqualified, and access to the test will be blocked..</li>
-      <li>Click the checkbox below once you understand these instructions.</li>
-    </ul>
-    <!-- Consider adding a separate section or note before the instructions: -->
-    <p><strong>Before you begin:</strong> Please ensure your internet connection is stable and your device is fully charged or plugged in.</p>
-    <div class="instruction-confirmation">
-      <input type="checkbox" id="instruction-checkbox" name="instruction-confirm">
-      <label for="instruction-checkbox"> I have read and understood the instructions.</label>
+    <!-- Instruction Section -->
+    <div id="instruction-container">
+      <h2>Instructions</h2>
+      <p>Please read the following instructions carefully before proceeding:</p>
+      <ul>
+        <li>You will have <strong>10 minute</strong> to complete the test.</li>
+        <li>Ensure you complete the test within the time limit shown in the top-right corner.</li>
+        <li>During the test,<strong>do not</strong> perform any of the following actions:</li>
+        <li>Switch to another application or program.</li>
+        <li>Use keyboard shortcuts for switching.</li>
+        <li>Switch to another browser tab or window.</li>
+        <li>Minimize the browser window.</li>
+        <li>Interact with notifications (e.g., clicking on them).</li>
+        <li>Refreshing the page.</li>
+        <li>Do not allow your computer to go to sleep or hibernate.</li>
+        <li>If you perform any of the above actions:</li>
+        <li>You will receive a warning on the first violation.</li>
+        <li>On the second violation, you will be disqualified, and access to the test will be blocked.</li>
+  
+        <!-- === ADDED SCREEN SHARING INSTRUCTIONS HERE === -->
+        <li>To ensure test integrity, you will be asked to share your screen when you begin the test.</li>
+        <li>Please select <strong>your entire screen</strong> or the <strong>browser window containing this test</strong> when prompted by your browser.</li>
+        <li>Granting screen sharing permission is <strong>required</strong> to start and continue the test.</li>
+        <li>If you deny permission, you will have error message..</li>
+        <li>If you stop sharing your screen during the test, your session will be <strong>immediately blocked</strong>.</li>
+        <li>Screen sharing is used solely for monitoring test activity and ensuring fairness.</li>
+        <!-- === END ADDED SCREEN SHARING INSTRUCTIONS === -->
+  
+        <li>Click the checkbox below once you understand all these instructions.</li>
+      </ul>
+      <p><strong>Before you begin:</strong> Please ensure your internet connection is stable and your device is fully charged or plugged in.</p>
+      <div class="instruction-confirmation">
+        <input type="checkbox" id="instruction-checkbox" name="instruction-confirm">
+        <label for="instruction-checkbox"> I have read and understood the instructions.</label>
+      </div>
     </div>
-  </div>
-
+  
 
   <div id="google-form-container"></div>
 

@@ -1040,7 +1040,6 @@
 
 // });
 
-
 // js/main.js
 import * as UI from './ui.js'; // Import all UI functions
 import { startTimer, stopTimer } from './timer.js';
@@ -1054,7 +1053,7 @@ let tabSwitchWarnings = parseInt(localStorage.getItem('tabSwitchWarnings') || '0
 let isGoogleFormActive = false; // Flag for Google Form phase
 const timerDuration = 10 * 60 * 1000; // 10 minutes
 let violationCheckInProgress = false; // Flag to prevent rapid double triggers
-let isPermissionPromptActive = false; // <<< NEW: Flag for getDisplayMedia prompt
+let isPermissionPromptActive = false; // Flag for getDisplayMedia prompt
 
 // --- Screen Capture State (Once Per Session) ---
 let activeScreenStream = null;
@@ -1113,7 +1112,7 @@ function resetApp() {
 
 async function handleFormSubmit(event) {
     event.preventDefault();
-    UI.hideMessage();
+    UI.hideMessage(); // Hide any previous messages on new submit
 
     if (isDisqualified) {
         handleDisqualification(); // Re-show message if needed
@@ -1230,6 +1229,7 @@ async function handleInstructionCheckboxChange() { // Made async
 
     if (instructionCheckbox.checked) {
         console.log("Instructions confirmed.");
+        UI.hideMessage(); // Hide any previous messages before asking permission
 
         // Attempt to start screen capture FIRST
         const captureStarted = await startScreenCapture(); // Wait for permission result
@@ -1247,9 +1247,7 @@ async function handleInstructionCheckboxChange() { // Made async
             console.log("Screen capture failed to start. Cannot proceed.");
             // Uncheck the box as the process cannot continue without capture
             instructionCheckbox.checked = false;
-            // Show a message to the user
-            UI.showMessage("Screen sharing permission is required to start the test.", "error");
-            // Disqualification is likely handled within startScreenCapture on denial
+            // The error message is now shown (and timed out) within startScreenCapture
         }
 
     } else {
@@ -1344,16 +1342,23 @@ async function startScreenCapture() {
     } catch (error) {
         isPermissionPromptActive = false; // <<< CLEAR FLAG even on error
         console.error("[Capture] Error starting screen capture:", error.name, error.message);
+
+        // --- MODIFIED ERROR HANDLING ---
+        let userMessage = "Could not start screen sharing. Please ensure permissions are enabled and try again."; // Default message
         if (error.name === 'NotAllowedError') {
             console.warn("[Capture] User denied screen sharing permission.");
-            // Let the calling function (handleInstructionCheckboxChange) handle UI feedback
-        } else {
-             UI.showMessage("Could not start screen sharing. Please ensure permissions are enabled.", "error");
+            userMessage = "Screen sharing permission is required to start the test."; // Specific message for denial
+            // Do NOT disqualify here, let the calling function handle UI based on return value
         }
+
+        UI.showMessage(userMessage, "error"); // Show the message
+        setTimeout(UI.hideMessage, 5000); // <<< HIDE message after 5 seconds
+
+        // --- END MODIFIED ERROR HANDLING ---
+
         stopScreenCapture(); // Ensure cleanup on error
         return false; // Indicate failure
     }
-    // Removed finally block as flag needs to be cleared specifically after await or in catch
 }
 
 function stopScreenCapture() {
@@ -1544,3 +1549,4 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log("Attached visibilitychange and blur listeners.");
 
 });
+

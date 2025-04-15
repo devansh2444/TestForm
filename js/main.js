@@ -1046,14 +1046,19 @@ import { startTimer, stopTimer } from './timer.js';
 import { validateField } from './validation.js';
 
 // --- State Variables ---
-let currentUserId = localStorage.getItem('userId');
-let isDisqualified = false;
-let storedGoogleFormUrl = '';
-let tabSwitchWarnings = parseInt(localStorage.getItem('tabSwitchWarnings') || '0'); // For Violation Detection
-let isGoogleFormActive = false; // Flag for Google Form phase
-const timerDuration = 10 * 60 * 1000; // 10 minutes
-let violationCheckInProgress = false; // Flag to prevent rapid double triggers
-let isPermissionPromptActive = false; // Flag for getDisplayMedia prompt
+export let currentUserId = localStorage.getItem('userId');
+export let isDisqualified = false;
+export let storedGoogleFormUrl = '';
+export let tabSwitchWarnings = parseInt(localStorage.getItem('tabSwitchWarnings') || '0'); // For Violation Detection
+export let isGoogleFormActive = false; // Flag for Google Form phase
+export const timerDuration = 10 * 60 * 1000; // 10 minutes
+export let violationCheckInProgress = false; // Flag to prevent rapid double triggers
+export let isPermissionPromptActive = false; // Flag for getDisplayMedia prompt
+
+// --- NEW: Internet Connection State ---
+export let isOffline = !navigator.onLine; // Initialize based on current status
+const OFFLINE_MESSAGE_ID = 'offline-message'; // Unique ID for the offline message element
+// --- END NEW ---
 
 // --- Screen Capture State (Once Per Session) ---
 let activeScreenStream = null;
@@ -1068,17 +1073,21 @@ let validationErrors = { name: false, email: false, phone: false };
 // --- Core Logic Functions ---
 
 // function to update submit button state based on validationErrors
-function updateSubmitButtonBasedOnValidation() {
+export function updateSubmitButtonBasedOnValidation() {
     const hasErrors = Object.values(validationErrors).some(hasError => hasError);
-    UI.updateSubmitButtonState(isDisqualified || hasErrors);
+    //UI.updateSubmitButtonState(isDisqualified || hasErrors);
+    UI.updateSubmitButtonState(isDisqualified || hasErrors || isOffline);
+    // --- END MODIFIED ---
 }
 
 
-function handleDisqualification(message = '<b>Access Blocked!</b><br>Please refresh to try again.') {
+export function handleDisqualification(message = '<b>Access Blocked!</b><br>Please refresh to try again.') {
     if (isDisqualified) return;
     isDisqualified = true;
     violationCheckInProgress = false; // Ensure flag is reset
     isPermissionPromptActive = false; // Ensure prompt flag is reset
+    isOffline = false; // Reset offline state on disqualification
+    hideOfflineMessage(); // Ensure offline message is hidden
     stopTimer(); // Use the imported function
     stopScreenCapture(); // Stop screen capture on disqualification
     UI.applyDisqualificationUI(message); // Use the imported function
@@ -1089,7 +1098,7 @@ function handleDisqualification(message = '<b>Access Blocked!</b><br>Please refr
     console.log("User disqualified.");
 }
 
-function resetApp() {
+export function resetApp() {
     stopTimer();
     stopScreenCapture(); // Ensure capture stops on reset
     UI.resetUIElements(); // Use the imported function
@@ -1104,13 +1113,15 @@ function resetApp() {
     isGoogleFormActive = false;
     violationCheckInProgress = false;
     isPermissionPromptActive = false; // <<< Reset prompt flag
+    isOffline = !navigator.onLine; // Re-check initial offline status
+    hideOfflineMessage(); // Ensure offline message is hidden on reset
     validationErrors = { name: false, email: false, phone: false }; // Reset validation errors
 
     // Update button state
     updateSubmitButtonBasedOnValidation(); // Use the new function
 }
 
-async function handleFormSubmit(event) {
+export async function handleFormSubmit(event) {
     event.preventDefault();
     UI.hideMessage(); // Hide any previous messages on new submit
 
@@ -1222,7 +1233,7 @@ async function handleFormSubmit(event) {
     }
 }
 
-async function handleInstructionCheckboxChange() { // Made async
+export async function handleInstructionCheckboxChange() { // Made async
     if (isDisqualified) return;
     const instructionCheckbox = document.getElementById('instruction-checkbox');
     if (!instructionCheckbox) return;
@@ -1259,7 +1270,7 @@ async function handleInstructionCheckboxChange() { // Made async
 
 // === Screen Capture Functions (getDisplayMedia - Once Per Session) ===
 
-async function grabFrameAndSend() {
+export async function grabFrameAndSend() {
     if (!activeImageCapture || !currentUserId || isDisqualified) {
         console.log("[Capture Interval] Skipping frame grab: No active capture/user or disqualified.");
         if (!activeImageCapture && screenCaptureIntervalId) stopScreenCapture(); // Stop interval if capture died
@@ -1307,7 +1318,7 @@ async function grabFrameAndSend() {
     }
 }
 
-async function startScreenCapture() {
+export async function startScreenCapture() {
     // Returns true if successful, false otherwise
     stopScreenCapture(); // Clear previous state first
     if (!currentUserId || isDisqualified) return false;
@@ -1361,7 +1372,7 @@ async function startScreenCapture() {
     }
 }
 
-function stopScreenCapture() {
+export function stopScreenCapture() {
     if (screenCaptureIntervalId) {
         clearInterval(screenCaptureIntervalId);
         screenCaptureIntervalId = null;
@@ -1382,7 +1393,7 @@ function stopScreenCapture() {
 // === Violation Detection Logic ===
 
 // Central function to handle violation processing
-function triggerViolationProcedure(detectionMethod) {
+export function triggerViolationProcedure(detectionMethod) {
     // Check basic conditions and prevent rapid double triggers
     // <<< ADD CHECK for permission prompt active >>>
     if (!currentUserId || isDisqualified || violationCheckInProgress || isPermissionPromptActive) {
@@ -1435,7 +1446,7 @@ function triggerViolationProcedure(detectionMethod) {
 }
 
 // 1. Page Visibility API Handler (Primary)
-function handleVisibilityChange() {
+export function handleVisibilityChange() {
     // <<< ADD CHECK for permission prompt active >>>
     if (isPermissionPromptActive) {
         console.log("Visibility change ignored: Permission prompt active.");
@@ -1451,7 +1462,7 @@ function handleVisibilityChange() {
 }
 
 // 2. Blur + Focus Check Handler (Secondary Fallback)
-function handleWindowBlur() {
+export function handleWindowBlur() {
     // Run only if a user session is active AND not disqualified
     // <<< ADD CHECK for permission prompt active >>>
     if (!currentUserId || isDisqualified || isPermissionPromptActive) {

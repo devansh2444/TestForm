@@ -23,16 +23,28 @@ export function startTimer(duration, onTimeout) {
         const elapsedTime = Date.now() - startTime;
         const remainingTime = duration - elapsedTime;
 
-        if (remainingTime <= 0) {
-            stopTimer(); // Stop interval first
-            console.log("Timer expired.");
-            if (handleTimeoutCallback) {
-                handleTimeoutCallback(); // Call the timeout handler passed from main.js
-            }
-        } else {
-            updateTimerDisplay(formatTime(remainingTime), true);
+    //     if (remainingTime <= 0) {
+    //         stopTimer(); // Stop interval first
+    //         console.log("Timer expired.");
+    //         if (handleTimeoutCallback) {
+    //             handleTimeoutCallback(); // Call the timeout handler passed from main.js
+    //         }
+    //     } else {
+    //         updateTimerDisplay(formatTime(remainingTime), true);
+    //     }
+    // }, 1000);
+    if (remainingTime <= 0) {
+        console.log("Timer expired.");
+        // --- CHANGE HERE: Call callback BEFORE stopping ---
+        if (handleTimeoutCallback) {
+            handleTimeoutCallback(); // Call the timeout handler
         }
-    }, 1000);
+        stopTimer(); // Stop interval AFTER callback
+        // --- END CHANGE ---
+    } else {
+        updateTimerDisplay(formatTime(remainingTime), true);
+    }
+}, 1000);
 }
 
 export function stopTimer() {
@@ -42,5 +54,5 @@ export function stopTimer() {
         updateTimerDisplay(formatTime(0), false); // Hide timer
         console.log("Timer stopped.");
     }
-    handleTimeoutCallback = null; // Clear callback
+    //handleTimeoutCallback = null; // Clear callback
 }
